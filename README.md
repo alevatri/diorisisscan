@@ -1,7 +1,9 @@
 # Diorisis Scan
-A Python module for the metrical scansion of Ancient Greek prose and verse texts.
+Python module for the metrical scansion of Ancient Greek.
 
-If run in Windows, the module loads a custom font in the terminal for the correct display of metrical symbols.
+#### Non-Standard Dependencies
+`datrie`, `pywin32` (if run in Windows).
+If run in Windows, the module loads a custom font in the terminal for the correct display of metrical symbols. The font change is limited to the Command Prompt window where the script is run.
 
 # Standalone
 
