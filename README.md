@@ -24,13 +24,31 @@ or
 `document = doc(form=form,verse=verse,metre=metre)`
 
 ### Options
-| option | accepted values |
-| ----------- | ----------- |  
-| *form* | String. Word/sentence in Unicode Polytonic Greek. |
-| *file* | String. Full path to text file to be parsed (plain text, Unicode Polytonic Greek).|
-| | *form* and *file* may not be used at the same time |
-| *verse* | Boolean. Specify that the text is verse. If used with *file*, each line in the text is scanned as a separate unit; otherwise, units will be delimited by strong punctuation marks (., ·, ;). |
-| *metre* | String. Specify what metre the text is in. See table below for options. If this option is omitted, metres will be guessed by the parser. |
+<table>
+  <tr>
+    <th>option</th>
+    <th>accepted values</th>
+  </tr>
+  <tr>
+    <td><em>form</em></td>
+    <td><code>String</code>. Required. Word/sentence in Unicode Polytonic Greek.</td>
+  </tr>
+  <tr>
+    <td><em>file</em></td>
+    <td><code>String</code>. Required. Full path to text file to be parsed (plain text, Unicode Polytonic Greek).</td>
+  </tr>
+  <tr>
+    <td colspan=2 align="center"><em>form</em> and <em>file</em> may not be used at the same time </td>
+  </tr>
+  <tr>
+    <td><em>verse</em></td>
+    <td><code>Boolean</code>. Optional. Specify that the text is verse. If used with *file*, each line in the text is scanned as a separate unit; otherwise, units will be delimited by strong punctuation marks (., ·, ;). </td>
+  </tr>
+  <tr>
+    <td><em>metre</em></td>
+    <td><code>String</code>. Optional. Specify what metre the text is in. See table below for options. If this option is omitted, metres will be guessed by the parser.</td>
+  </td>
+  </table>
 
 #### Supported metres
 |  code | metre |
@@ -39,7 +57,7 @@ or
 |pent | pentameter |
 |3ia | iambic trimeter |
 |4tr^ |catalectic trochaic tetrameter |
-|4 anap^ | catalectic anapaestic tetrameter |
+|4anap^ | catalectic anapaestic tetrameter |
 | 3ia(s) | scazon |
 | gl | glyconean |
 | ph | pherecratean |
@@ -48,17 +66,17 @@ or
 
 
 ### Methods
-#### scanAndDisplay(_syll_=`Boolean`, _showText_=`Boolean`, _analysis_=`Boolean`, _problems_=`Boolean`, _above_=`Boolean`,_export_=`String`)
-This method scans the input text or form/sentence and outputs the results of the scansion to screen and/or to an external file.
+#### display(_syll_=`Boolean`, _showText_=`Boolean`, _analysis_=`Boolean`, _problems_=`Boolean`, _above_=`Boolean`,_export_=`String`)
+This displays the results of the scansion to screen and/or to an external file.
 
 | option | values |
 | ----------- | ----------- |  
-|*syll* | optional (default `False`). Print scansions for each syllable as interlinear text. |
-|*showText*|optional (default `False`). Print text units (lines/sentences) before their syllable-by-syllable scansion. The metre of each line is not displayed by default.|
-|*analysis*|optional (default `False`). Display the detected metre (if any) alongside syllable-by-syllable scansions.|
-|*problems*|optional (default `False`). Use with `verse = True`. Only display lines/sentences that are not analysable as a supported metre.|
-|*above*|optional (default `False`). Use with `syll = True`. Print the interlinear scansions above the line of text (otherwise scansions are printed below by default).|
-|*export*|optional. Full path to text file to which to save the results. If blank, the results are only printed to screen.|
+|*syll* | Optional (default `False`). Print scansions for each syllable as interlinear text. |
+|*showText*|Optional (default `False`). Print text units (lines/sentences) before their syllable-by-syllable scansion. The metre of each line is not displayed by default.|
+|*analysis*|Optional (default `False`). Display the detected metre (if any) alongside syllable-by-syllable scansions.|
+|*problems*|Optional (default `False`). Use with `verse = True`. Only display lines/sentences that are not analysable as a supported metre.|
+|*above*|Optional (default `False`). Use with `syll = True`. Print the interlinear scansions above the line of text (otherwise scansions are printed below by default).|
+|*export*|Optional. Full path to text file to which to save the results. If blank, the results are only printed to screen.|
 
 ### Properties
 #### scannedDocument
@@ -71,12 +89,5 @@ This method scans the input text or form/sentence and outputs the results of the
 - _analysis_: the result of the metrical analysis (if requested)
 - _syllables_: a `List` containing a `list` for each syllable. The first element in each `list` is the syllable itself; the second element is its scansion.
 
-## The `syllabify` class
-
-This class returns syllabified texts or forms/sentences.
-
-The class requires one parameter to be instantiated. The parameter is a `String` containing either the form/sentence to be syllabified or the full path to a text file to be parsed (plain text, Unicode Polytonic Greek).
-
-### Properties
 #### syllables
 A `List` containing a `list` for each syllable. The first element in each `list` is the syllable itself; the second element is its scansion.
