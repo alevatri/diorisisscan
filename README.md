@@ -3,7 +3,7 @@ Python module for the metrical scansion of Ancient Greek.
 
 #### Non-Standard Dependencies
 `datrie`, `pywin32` (if run in Windows).
-If run in Windows, the module loads a custom version of Deja Vu Sans Mono [https://dejavu-fonts.github.io/License.html](license) in the terminal for the correct display of metrical symbols. The font change is limited to the Command Prompt window where the script is run. The font is distributed as public domain.
+If run in Windows, the module loads a custom version of Deja Vu Sans Mono ([https://dejavu-fonts.github.io/License.html](license)) in the terminal for the correct display of metrical symbols. The font change is limited to the Command Prompt window where the script is run. The font is distributed as public domain.
 
 # Standalone
 
