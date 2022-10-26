@@ -17,11 +17,11 @@ Copy all files to the same folder as your script and import it as follows:
 
 Texts or forms/sentences to be scanned are loaded into a `doc` object:
 
-`document = doc(file=filename,verse=verse,metre=metre)`
+`document = ps.doc(file=filename,verse=verse,metre=metre)`
 
 or 
 
-`document = doc(form=form,verse=verse,metre=metre)`
+`document = ps.doc(form=form,verse=verse,metre=metre)`
 
 ### Options
 <table>
