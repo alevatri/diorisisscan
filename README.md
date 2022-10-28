@@ -42,7 +42,7 @@ or
   </tr>
   <tr>
     <td><em>verse</em></td>
-    <td><code>Boolean</code>. Optional. Specify that the text is verse. If used with *file*, each line in the text is scanned as a separate unit; otherwise, units will be delimited by strong punctuation marks (., ·, ;). </td>
+    <td><code>Boolean</code>. Optional. Specify that the text is verse. If used with <em>file</em>, each line in the text is scanned as a separate unit; otherwise, units will be delimited by strong punctuation marks (., ·, ;). </td>
   </tr>
   <tr>
     <td><em>metre</em></td>
@@ -50,7 +50,7 @@ or
   </tr>
   <tr>
     <td><em>mCl</em></td>
-    <td><code>Boolean</code>. Optional (default `False`). Assign muta-cum-liquida clusters to the same syllable (as onsets). This does not affect the scansion but only the visualization of syllables (syllables containing a short vowel followed by muta cum liquida scan ambiguous).</td>
+    <td><code>Boolean</code>. Optional. Assign muta-cum-liquida clusters to the same syllable (as onsets). This does not affect the scansion but only the visualization of syllables (syllables containing a short vowel followed by muta cum liquida scan ambiguous).</td>
   </tr>
   </table>
 
