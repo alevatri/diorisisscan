@@ -47,7 +47,11 @@ or
   <tr>
     <td><em>metre</em></td>
     <td><code>String</code>. Optional. Specify what metre the text is in. See table below for options. If this option is omitted, metres will be guessed by the parser.</td>
-  </td>
+  </tr>
+  <tr>
+    <td><em>mCl</em></td>
+    <td><code>Boolean</code>. Optional (default `False`). Assign muta-cum-liquida clusters to the same syllable (as onsets). This does not affect the scansion but only the visualization of syllables (syllables containing a short vowel followed by muta cum liquida scan ambiguous).</td>
+  </tr>
   </table>
 
 #### Supported metres
@@ -75,7 +79,6 @@ This displays the results of the scansion to screen and/or to an external file.
 |*showText*|Optional (default `False`). Print text units (lines/sentences) before their syllable-by-syllable scansion. The metre of each line is not displayed by default.|
 |*analysis*|Optional (default `False`). Display the detected metre (if any) alongside syllable-by-syllable scansions.|
 |*problems*|Optional (default `False`). Use with `verse = True`. Only display lines/sentences that are not analysable as a supported metre.|
-|*mCl*| Optional (default `False`). Use with `syll = True`. Assign muta-cum-liquida clusters to the same syllable (as onsets). This does not affect the scansion but only the visualization of syllables (syllables containing a short vowel followed by muta cum liquida scan ambiguous). |
 |*above*|Optional (default `False`). Use with `syll = True`. Print the interlinear scansions above the line of text (otherwise scansions are printed below by default).|
 |*export*|Optional. Full path to text file to which to save the results. If blank, the results are only printed to screen.|
 
