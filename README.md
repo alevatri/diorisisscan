@@ -50,7 +50,7 @@ or
   </tr>
   <tr>
     <td><em>mCl</em></td>
-    <td><code>Boolean</code>. Optional. Assign muta-cum-liquida clusters to the same syllable (as onsets). This does not affect the scansion but only the visualization of syllables (syllables containing a short vowel followed by muta cum liquida scan ambiguous).</td>
+    <td><code>Boolean</code>. Optional. Syllabifies <em>muta-cum-liquida</em> clusters as onsets, which may result in <em>correptio Attica</em>. If left unspecified, the parser returns all possibilities for syllables with a short vowel preceding this type of cluster.</td>
   </tr>
   </table>
 
