@@ -250,7 +250,7 @@ class _word:
 				TMPsyll.append([index, x])
 				break
 			if x[1] == 'vowel':
-				if e> 0 and ((x[0][0] not in ['i','u'] and toParse[e-1][1] in ['vowel','diacritic']) or (x[0][0] in ['i','u'] and (toParse[e-1][1] == 'diacritic' or toParse[e-1][0] in ['i','u']))):
+				if e> 0 and ((x[0][0] not in ['i','u'] and toParse[e-1][1] in ['vowel','diacritic']) or (x[0][0] in ['i','u'] and (toParse[e-1][1] == 'diacritic' or toParse[e-1][0][0] in ['i','u']))):
 					index += 1
 					TMPsyll.append([index, ('','boundary')])
 				index += 1
@@ -321,7 +321,7 @@ class _word:
 				previous_vowel = self.previous_vowel(index) #second element of diphthong
 				if previous_vowel in ['a','e','o','h','w'] and letter in ['i','u'] and '+' not in self.letter_diacritics(index) and not self.parse[index-1][1] == 'diacritic':
 					output[-1] = [output[-1][0],byNature]
-					if self.next_vowel(index) in ['a','e','h','o','w']: #diphthong ante uocalem
+					if self.next_vowel(index) in ['a','e','i','h','o','u','w']: #diphthong ante uocalem
 						output[-1] = [output[-1][0],'⏓']
 					continue
 				if letter == 'i' and previous_vowel == 'u' and '+' not in self.letter_diacritics(index) and not self.parse[index-1][1] == 'diacritic':
@@ -420,7 +420,7 @@ def _sandhi(sentence):
 		if pr_final in ['a','e','o'] and cu_initial in long_vowels + short_vowels + ancipites and sentence[index][1][-1][1] == '⏑': #elision
 				sandhis.append((index,'eli/syn'))
 		if (pr_final_len != '⏑' and pr_final in long_vowels + ancipites) or len(pr_final) > 1:
-			if cu_initial in ['a','e','h','o','w']: #uocalis ante uocalem
+			if cu_initial in ['a','e','i','h','o','u','w']: #uocalis ante uocalem, diphthong before vowel
 				sandhis.append((index,'inv_anceps'))
 				continue
 		if pr_final not in long_vowels + short_vowels + ancipites:
@@ -457,11 +457,11 @@ class doc:
 
 	def _tokenize(self, text, **kwargs):
 		document = []
-		separator =  ' @' if self._verse else '[\.··;:]'
+		separator =  ' @' if self._verse else '[\.··;:]'
 		if not self._verse: text = re.sub('(%s) '%separator, r'\1\1 ', text)
 		sentences = re.split('%s '%separator, text)
 		for sentence in sentences:
-			tokens = re.split('([,\(\)<>\"“”\{\}\[\]—\-– \.··;:])',sentence)
+			tokens = re.split('([,\(\)<>\"“”\{\}\[\]—\-– \.··;:])',sentence)
 			tokens = [{"form":utf2beta(t.strip()), "type":self._type(t)} for t in tokens if t not in [' ','']]
 			document.append({'sentence':sentence,'tokens':tokens})
 		return document
@@ -663,7 +663,7 @@ class doc:
 			syllCount = 0
 			data['scansion'] = ''.join(correction)
 			tmpAdd = ''
-			for w in tmpScansions[:len(correction)-1]:
+			for w in tmpScansions:
 				if w[-1] != 'word': continue
 				for s in w[1]:
 					if syllCount < len(data['scansion']):
@@ -674,13 +674,12 @@ class doc:
 			if len(tmpAdd) > 0: analysis += f" + {tmpAdd}"
 		return {'analysis':analysis,'outputScansion':data['scansion'],'scansions':tmpScansions}
 
-
 	def _scanDocument(self):
 		document = self._tokenize(self._form.replace("᾽","'"))
 		self.scannedDocument = []
 		for sentence in document:
 			if not re.search('[aehiowu]',utf2beta(sentence['sentence'])):
-				input(f'The form/sentence/line {sentence["sentence"]} contains no vowels and cannot be syllabified. Hit return to continue to the next item.')
+				if __name__ == '__main__': input(f'The form/sentence/line {sentence["sentence"]} contains no vowels and cannot be syllabified. Hit return to continue to the next item.')
 				continue
 			scansions = []
 			for token in sentence['tokens']:
@@ -727,7 +726,8 @@ class doc:
 			sandhiSequence = [beta2utf(x) for x in sandhiString.syllabify()]
 			sandhiSequence = [x.replace('ς','σ' if e<len(sandhiSequence) -1 else 'ς').replace('σ#','ς#') for e,x in enumerate(sandhiSequence)]
 			scannedUnits = []
-			for e,s in enumerate(output['scansion']):
+			full_scansion = output['scansion'] + ((output['analysis'].split(' + ')[1] if '+' in output['analysis'] else '') if output['analysis'] else '')
+			for e,s in enumerate(full_scansion):
 				if s != '͜': scannedUnits.append(s)
 				else: scannedUnits[-1]+=s
 			output['syllables'] = list(zip(sandhiSequence,scannedUnits))
@@ -774,7 +774,7 @@ if __name__ == '__main__':
 	if '-help' in sys.argv:
 		entries = ['-doc','-verse','-syll','-mCl','-above','-showText','-analysis','-metre','-export','-problems']
 		descr = ['Load UTF-8 text file into the scanner. The name of the file should include the full path. If it contains spaces, use quotation marks around it.','Specify that the text is verse. Each line in the text is scanned as a separate unit; otherwise, units will be delimited by strong punctuation marks (., ·, ;).', 'Print scansions for each syllable as interlinear text. A number after this command specifies the number of syllables per line (default: 15).','Syllabifies muta-cum-liquida clusters as onsets, which may result in correptio Attica. If left unspecified, the parser returns all possibilities for syllables with a short vowel preceding this type of cluster.','If -syll is active, print the interlinear scansions above the line of text (otherwise scansions are printed below by default)','Print text units (lines/sentences) before their syllable-by-syllable scansion. The metre of each line is not displayed by default.','Display the detected metre (if any) alongside syllable-by-syllable scansions.','Specify what metre the text is in. Available options:'+190* ' '+'· hex            hexameter'+190* ' '+'· pent           pentameter'+190* ' '+'· 3ia            iambic trimeter'+190* ' '+'· 4tr^           catalectic trochaic tetrameter'+190* ' '+'· 4anap^         catalectic anapaestic tetrameter'+190* ' '+'· 3ia(s)         scazon'+190* ' '+'· gl             glyconean'+190* ' '+'· ph             pherecratean'+190* ' '+'· sapph          sapphic endecasyllable'+190* ' '+'· adon           adonean'+190* ' '+'If this option is omitted, metres will be guessed by the parser.','Save the results to a text file. Enter the full path to the file (including the folder).','If -verse is active, only return lines that do not scan.']
-		title = "DIORISIS SCAN beta"
+		title = "DIORISIS SCAN b`eta"
 		print(f'╔{"═"*(len(title)+2)}╗'.center(os.get_terminal_size().columns))
 		print(f'║ {title} ║'.center(os.get_terminal_size().columns))
 		print(f'╚{"═"*(len(title)+2)}╝'.center(os.get_terminal_size().columns))
@@ -825,5 +825,3 @@ if __name__ == '__main__':
 		else:
 			print('Name of output file missing')
 			sys.exit()
-
-
