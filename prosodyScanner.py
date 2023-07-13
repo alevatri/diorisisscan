@@ -401,8 +401,8 @@ def _sandhi(sentence):
 		pr_final = ','
 		pr_final_len = sentence[index][1][-1][1] if len(sentence[index][1]) > 0 else ''
 		if len(previous_word) > 0:
-				pr_final = previous_word[-1].lower()
-				if pr_final in ['i','u'] and previous_word[-2].lower() in ['a','e','h','o','w','u']: pr_final = previous_word[-2:].lower()
+			pr_final = previous_word[-1].lower()
+			if pr_final in ['i','u'] and len(previous_word) > 1 and previous_word[-2].lower() in ['a','e','h','o','w','u']: pr_final = previous_word[-2:].lower()
 		current_word= re.sub('[^A-z]*','',form)
 		cu_initial = ','
 		cu_second = ''
