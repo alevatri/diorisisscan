@@ -173,7 +173,7 @@ syll_width = 18
 syll_per_line = os.get_terminal_size().columns // syll_width
 
 #metrical elements
-py = {'⏒͜⏓', '⏓͜⏑͜', '⏓͜⏓͜', '⏓⏓͜', '⏒͜⏒', '⏑⏓͜', '⏑͜⏑͜', '⏓⏑͜', '⏑⏓', '⏒͜⏑͜', '⏑⏑͜', '⏑͜⏑', '⏑⏒', '⏒⏑', '⏓⏒͜', '⏓͜⏑', '⏑͜⏓͜', '⏓⏒', '⏒⏑͜', '⏒⏓', '⏒⏒', '⏒⏒͜', '⏒͜⏑', '⏑͜⏒', '⏓͜⏒͜', '⏒⏓͜', '⏒͜⏒͜', '⏓⏑', '⏑⏑', '⏓͜⏓', '⏑⏒͜', '⏓͜⏒', '⏓⏓', '⏒͜⏓͜', '⏑͜⏓', '⏑͜⏒͜', '⏑͜⏓⏑', '⏑͜⏑⏑', '⏑⏑͜', '⏑⏑͜⏑'}
+py = {'⏑⏓', '⏒͜⏓', '⏓͜⏑͜', '⏓͜⏓͜', '⏓⏓͜', '⏒͜⏒', '⏑⏓͜', '⏑͜⏑͜', '⏓⏑͜', '⏒͜⏑͜', '⏑⏑͜', '⏑͜⏑', '⏑⏒', '⏒⏑', '⏓⏒͜', '⏓͜⏑', '⏑͜⏓͜', '⏓⏒', '⏒⏑͜', '⏒⏓', '⏒⏒', '⏒⏒͜', '⏒͜⏑', '⏑͜⏒', '⏓͜⏒͜', '⏒⏓͜', '⏒͜⏒͜', '⏓⏑', '⏑⏑', '⏓͜⏓', '⏑⏒͜', '⏓͜⏒', '⏓⏓', '⏒͜⏓͜', '⏑͜⏓', '⏑͜⏒͜', '⏑͜⏓⏑', '⏑͜⏑⏑', '⏑⏑͜', '⏑⏑͜⏑'}
 br = {'⏑', '⏑͜', '⏓','⏒','⏓͜','⏒͜'}
 lg = {'⏑͜–', '⏓', '⏑͜⏒', '⏑͜⏓', '⏒', '–','⏓͜','⏒͜', '⏓͜⏑'}
 
@@ -192,8 +192,9 @@ class _externalFile:
 
 class _word:
 	def __init__(self, form):
-		self._form = re.sub(r'([bgdzqklmncprstfxy]+.*?[aehow][iu])[\(\)]',r'\1+',form)
-		self.parse = [(character,self.type(character)) for character in re.sub(r'([^A-Za-z]+)\|',r'|\1',utf2beta(beta2utf(self._form	).lower()))]
+		self._form = re.sub(r'(pro)(i(?=[\(\)])|u(?=\())',r'\1\2+',form)
+		self.parse = [(character,self.type(character)) for character in re.sub(r'([^A-Za-z]+)\|',r'|\1',utf2beta(beta2utf(self._form).lower()))]
+		# ic(self.parse)
 	def type(self,character):
 		if character in long_vowels + short_vowels + ancipites: return 'vowel'
 		if re.match('[A-Za-z]',character) and character not in long_vowels + short_vowels + ancipites: return 'consonant'
@@ -452,7 +453,7 @@ class _word:
 		#test synizesis
 		for e,s in enumerate(output):
 			if e > 0:
-				if (s[0][0] in long_vowels + ancipites + short_vowels or s[0][:2] in diphthongs) and s[1] in ['–','⏓'] and re.sub('[^a-z]','',output[e-1][0])[-1] in short_vowels + ancipites and output[e-1][1] in ['⏑','⏒','⏓']:
+				if (s[0][0] in long_vowels + ancipites + short_vowels or s[0][:2] in diphthongs) and s[1] in ['–','⏓'] and re.sub('[^a-z]','',output[e-1][0])[-1] in short_vowels + ancipites and output[e-1][1] in ['⏑','⏒','⏓'] and not '+' in s[0]:
 					output[e-1][1] += '͜'
 		return output
 		
@@ -546,7 +547,7 @@ class doc:
 		isMetre = False
 		#Dactylic
 		arsis = f"({'|'.join(lg)})"
-		thesis = f"({'|'.join(lg.union(py))})"
+		thesis = f"({'|'.join(py.union(lg))})"
 		anceps = f"({'|'.join(lg.union(br))})"
 		if metre == 'hex':
 			metreRe = re.compile(f"{arsis}{thesis}{arsis}{thesis}{arsis}{thesis}{arsis}{thesis}{arsis}{thesis}{arsis}{anceps}")
@@ -556,13 +557,14 @@ class doc:
 			if (res:=metreRe.match(data['scansion'])):
 				analysis = 'hexameter'
 				for i in range(1,size+1):
-					# ic(res.group(i))
 					if i in [1,3,5,7,9,11]: #arsis positions
-						correction[i-1] = '–' if len(res.group(i)) <= 2 else res.group(i) #allow for synizesis
-					elif i < 12: #thesis
-						if len(res.group(i)) == 1 or (re.search('[–⏒⏓]', res.group(i)) and len(res.group(i)) == 2 and '͜' in res.group(i)): correction[i-1] = '–'
-						elif res.group(i).count('⏑') == 2 or (len(res.group(i)) == 2 and '͜' not in res.group(i)) or len(res.group(i)) == 3: correction[i-1] = '⏑⏑'
-						elif len(res.group(i)) > 3: correction[i-1] = re.sub('[^͜]','⏑',correction[i-1])
+						correction[i-1] = '–' if len(res.group(i)) <= 2 else re.sub('[⏒⏓]$', '–', res.group(i)) #allow for synizesis
+					elif i < 12:
+						if res.group(i) in py:
+							if len(res.group(i)) in (2,3): correction[i-1] = '⏑⏑'
+							else: correction[i-1] = re.sub('͜$', '', re.sub('[⏒⏓]','⏑', res.group(i)))
+						elif res.group(i) in lg: 
+							correction[i-1] = re.sub('[⏒⏓]$', '–', re.sub('͜$', '', re.sub('[^⏑]͜[^$]', '⏑͜', res.group(i))))
 					else: #final anceps
 						correction[i-1] = res.group(i)
 						if correction[i-1][-1] == '͜': correction[i-1] = correction[i-1][:-1]
