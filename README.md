@@ -1,9 +1,9 @@
-# Diorisis Scan
+# Diorisis Scan beta 0.2 (5-2026)
 Python module for the metrical scansion of Ancient Greek.
 
 #### Non-Standard Dependencies
-`datrie`, `pywin32` (if run in Windows).
-If run in Windows, the module loads a custom version of Deja Vu Sans Mono in the terminal for the correct display of metrical symbols. The font change is limited to the Command Prompt window where the script is run. The font is distributed as [public domain](https://dejavu-fonts.github.io/License.html).
+`datrie`, `pywin32` (if run on Windows 10).
+If run on Windows 10, the module loads a custom version of Deja Vu Sans Mono in the terminal for the correct display of metrical symbols. The font change is limited to the Command Prompt window where the script is run. The font is distributed as [public domain](https://dejavu-fonts.github.io/License.html).
 
 # Standalone
 
@@ -23,6 +23,10 @@ or
 
 `document = ps.doc(form=form,verse=verse,metre=metre)`
 
+I/O text streams can also be loaded as an input:
+
+`document = ps.doc(stream=ioStream,verse=verse,metre=metre)`
+
 ### Options
 <table>
   <tr>
@@ -31,14 +35,18 @@ or
   </tr>
   <tr>
     <td><em>form</em></td>
-    <td><code>String</code>. Required. Word/sentence in Unicode Polytonic Greek.</td>
+    <td><code>String</code>. Required (*). Word/sentence in Unicode Polytonic Greek.</td>
   </tr>
   <tr>
     <td><em>file</em></td>
-    <td><code>String</code>. Required. Full path to text file to be parsed (plain text, Unicode Polytonic Greek).</td>
+    <td><code>String</code>. Required (*). Full path to text file to be parsed (plain text, Unicode Polytonic Greek).</td>
   </tr>
   <tr>
-    <td colspan=2 align="center"><em>form</em> and <em>file</em> may not be used at the same time </td>
+    <td><em>stream</em></td>
+    <td><code>String</code>. Required (*). A Python text I/O stream object contaning the Unicode Polytonic Greek text to be parsed.</td>
+  </tr>
+  <tr>
+    <td colspan=2 align="center">(*) Only one input is required. If more are provided, <i>stream</i> overrides <i>file</i> and <i>file</i> overrides <i>form</i></td>
   </tr>
   <tr>
     <td><em>verse</em></td>
@@ -46,11 +54,19 @@ or
   </tr>
   <tr>
     <td><em>metre</em></td>
-    <td><code>String</code>. Optional. Specify what metre the text is in. See table below for options. If this option is omitted, metres will be guessed by the parser.</td>
+    <td><code>String</code>. Optional. Available if <i>verse</i> is selected. Specify what metre the text is in. See table below for options. If this option is omitted, metres will be guessed by the parser.</td>
+  </tr>
+   <tr>
+    <td><em>divide</em></td>
+    <td><code>Boolean</code>. Optional. Available if <i>verse</i> is selected. If the parser identifies a line but material is left over, a line break will be added to separate the line from the rest. If <i>metre</i> is specified, the parser will place the line break after the first identifiable line of the selected metre, otherwise it will look for the longest possible supported metre.</td>
   </tr>
   <tr>
     <td><em>mCl</em></td>
     <td><code>Boolean</code>. Optional. Syllabifies <em>muta-cum-liquida</em> clusters as onsets, which may result in <em>correptio Attica</em>. If left unspecified, the parser returns all possibilities for syllables with a short vowel preceding this type of cluster.</td>
+  </tr>
+  <tr>
+    <td><em>special</em></td>
+    <td><code>Python dictionary</code>. Optional. Load a custom dictionary of scanned forms integrating/overriding the general one.</td>
   </tr>
   </table>
 
