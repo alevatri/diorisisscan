@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*- 
+
 #Diorisis Scan
 
 import re, sys, json, os, string, platform, io, itertools, pickle
 import inspect #debug
 from icecream import ic #debug
+ic.configureOutput(includeContext=True) #debug
 dt = True
 mCl = False
 try:
@@ -26,6 +29,12 @@ else:
 			
 from utf2beta import convertUTF as utf2beta
 from beta2utf import convertBeta as beta2utf
+def normalizeForm(_form):
+	import re
+	if not _form.isascii():
+		_form = utf2beta(_form)
+	return re.sub('(.*?[=/].*?)/(.*?)', r'\1\2', _form.replace('\\','/'))
+
 fp = os.path.dirname(__file__) if len(os.path.dirname(__file__)) > 0 else ''
 
 scanTrie = None
@@ -166,16 +175,26 @@ long_vowels = ['h','w']
 short_vowels = ['e','o']
 ancipites = ['a','i','u']
 diphthongs = ['ai','ei','oi','ui','au','eu','ou','a|','hi','h|','wi','w|','hu','wu']
-scans = {'long':'–','short':'⏑','inv_anceps':'⏓','eli/syn':'⏑͜'}
+scans = {'long':'–','short':'⏑','inv_anceps':'⏓','eli/syn':'⏑͜','anceps': '⏒'}
 verbose = True
 verse = True
+addUnknowns = True
 syll_width = 18
 syll_per_line = os.get_terminal_size().columns // syll_width
 
+c2 = [h for h in [j for j in [list(x) for x in list(itertools.product(['⏑','⏒','⏓','͜'],repeat=4))] if j[0] != '͜'] if h.count('͜') == 2 and ['͜','͜'] not in h]
+
 #metrical elements
-py = {'⏑⏓', '⏒͜⏓', '⏓͜⏑͜', '⏓͜⏓͜', '⏓⏓͜', '⏒͜⏒', '⏑⏓͜', '⏑͜⏑͜', '⏓⏑͜', '⏒͜⏑͜', '⏑⏑͜', '⏑͜⏑', '⏑⏒', '⏒⏑', '⏓⏒͜', '⏓͜⏑', '⏑͜⏓͜', '⏓⏒', '⏒⏑͜', '⏒⏓', '⏒⏒', '⏒⏒͜', '⏒͜⏑', '⏑͜⏒', '⏓͜⏒͜', '⏒⏓͜', '⏒͜⏒͜', '⏓⏑', '⏑⏑', '⏓͜⏓', '⏑⏒͜', '⏓͜⏒', '⏓⏓', '⏒͜⏓͜', '⏑͜⏓', '⏑͜⏒͜', '⏑͜⏓⏑', '⏑͜⏑⏑', '⏑⏑͜', '⏑⏑͜⏑'}
-br = {'⏑', '⏑͜', '⏓','⏒','⏓͜','⏒͜'}
-lg = {'⏑͜–', '⏓', '⏑͜⏒', '⏑͜⏓', '⏒', '–','⏓͜','⏒͜', '⏓͜⏑'}
+py = ['⏒͜⏓͜⏓͜', '⏓͜⏒͜⏓͜', '⏓͜⏑͜⏒͜', '⏓͜⏓͜⏑͜', '⏑͜⏓͜⏑͜', '⏓͜⏓͜⏒͜', '⏒͜⏒͜⏒͜', '⏒͜⏓͜⏒͜', '⏑͜⏒͜⏑͜', '⏓͜⏓͜⏓͜', '⏒͜⏑͜⏒͜', '⏒͜⏒͜⏓͜', '⏑͜⏓͜⏒͜', '⏒͜⏒͜⏑͜', '⏑͜⏒͜⏒͜', '⏑͜⏒͜⏓͜', '⏑͜⏑͜⏒͜', '⏒͜⏑͜⏑͜', '⏑͜⏑͜⏓͜', '⏑͜⏓͜⏓͜', '⏓͜⏑͜⏓͜', '⏓͜⏒͜⏑͜', '⏓͜⏑͜⏑͜', '⏑͜⏑͜⏑͜', '⏒͜⏑͜⏓͜', '⏒͜⏓͜⏑͜', '⏓͜⏒͜⏒͜', '⏒͜⏑⏑͜', '⏒⏑͜⏓͜', '⏓͜⏒⏒͜', '⏒⏑͜⏑͜', '⏓͜⏓⏒͜', '⏓͜⏒⏑͜', '⏓͜⏓⏑͜', '⏒͜⏒⏒͜', '⏒͜⏒͜⏒', '⏒͜⏓⏓͜', '⏑͜⏓͜⏑', '⏒͜⏒⏑͜', '⏓⏑͜⏒͜', '⏑͜⏒⏑͜', '⏑͜⏑͜⏓', '⏒͜⏓͜⏑', '⏓⏑͜⏑͜', '⏓͜⏑⏑͜', '⏑͜⏓⏒͜', '⏒͜⏓͜⏒', '⏓͜⏑⏒͜', '⏑͜⏓⏓͜', '⏒͜⏑͜⏑', '⏒͜⏓͜⏓', '⏒͜⏒⏓͜', '⏒͜⏑͜⏓', '⏓͜⏑⏓͜', '⏑͜⏑͜⏑', '⏒͜⏓⏑͜', '⏒͜⏓⏒͜', '⏓͜⏑͜⏓', '⏒͜⏑⏒͜', '⏑͜⏒⏒͜', '⏓͜⏓͜⏓', '⏑⏑͜⏑͜', '⏒͜⏒͜⏑', '⏒⏑͜⏒͜', '⏑͜⏒͜⏒', '⏓͜⏒͜⏒', '⏑͜⏓͜⏒', '⏑͜⏒⏓͜', '⏑͜⏓͜⏓', '⏓͜⏒͜⏓', '⏑⏑͜⏓͜', '⏑͜⏒͜⏓', '⏑͜⏑⏑͜', '⏒͜⏑͜⏒', '⏑͜⏒͜⏑', '⏑͜⏓⏑͜', '⏑͜⏑⏒͜', '⏓͜⏓⏓͜', '⏓͜⏓͜⏒', '⏓͜⏒͜⏑', '⏓͜⏓͜⏑', '⏑͜⏑͜⏒', '⏒͜⏑⏓͜', '⏑⏑͜⏒͜', '⏓͜⏑͜⏒', '⏓͜⏒⏓͜', '⏓⏑͜⏓͜', '⏓͜⏑͜⏑', '⏑͜⏑⏓͜', '⏒͜⏒͜⏓', '⏒͜⏓⏒', '⏑⏑͜⏑', '⏑⏑͜⏓', '⏓͜⏑⏓', '⏒⏑͜⏒', '⏑͜⏓⏓', '⏓͜⏒͜', '⏒͜⏒⏑', '⏓͜⏑͜', '⏒͜⏒⏓', '⏑͜⏓⏑', '⏑͜⏑͜', '⏑͜⏑⏑', '⏒͜⏑⏑', '⏒͜⏑͜', '⏑͜⏓͜', '⏒⏑͜⏑', '⏑͜⏒͜', '⏓⏑͜⏒', '⏑͜⏑⏒', '⏓͜⏒⏒', '⏓͜⏒⏓', '⏒⏑͜⏓', '⏒͜⏑⏓', '⏓͜⏓⏓', '⏑͜⏓⏒', '⏒͜⏓⏑', '⏑͜⏑⏓', '⏑͜⏒⏓', '⏓͜⏓⏑', '⏒͜⏓͜', '⏑͜⏒⏑', '⏒͜⏒͜', '⏒͜⏓⏓', '⏓͜⏑⏑', '⏓͜⏑⏒', '⏒͜⏒⏒', '⏓⏑͜⏑', '⏑͜⏒⏒', '⏓⏑͜⏓', '⏓͜⏓⏒', '⏒͜⏑⏒', '⏓͜⏒⏑', '⏑⏑͜⏒', '⏓͜⏓͜', '⏒⏒͜', '⏒͜⏓', '⏒⏓͜', '⏑⏓͜', '⏒⏑͜', '⏓⏓͜', '⏓͜⏓', '⏓⏑͜', '⏑͜⏑', '⏒͜⏑', '⏓͜⏒', '⏑⏑͜', '⏑⏒͜', '⏒͜⏒', '⏓͜⏑', '⏑͜⏓', '⏑͜⏒', '⏓⏒͜', '⏓⏓', '⏒⏒', '⏑⏓', '⏑⏑', '⏑⏒', '⏓⏑', '⏓⏒', '⏒⏑', '⏒⏓']
+br = ['⏑', '⏑͜', '⏓','⏒','⏓͜','⏒͜']
+lg = ['⏑͜–', '⏓', '⏑͜⏒', '⏑͜⏓', '⏒', '–','⏓͜','⏒͜', '⏓͜⏑', '⏑͜⏓͜']
+
+def merge(*lists):
+	merged = []
+	for l in lists:
+		for i in l:
+			if i not in merged: merged.append(i)
+	return merged
 
 metreCycle = ['4anap^','hex','pent','4tr^','3ia','3ia/s','gl','ph','sapph','adon'] #longer first
 
@@ -193,9 +212,10 @@ class _externalFile:
 class _word:
 	def __init__(self, form):
 		self._form = re.sub(r'(pro)(i(?=[\(\)])|u(?=\())',r'\1\2+',form)
-		self.parse = [(character,self.type(character)) for character in re.sub(r'([^A-Za-z]+)\|',r'|\1',utf2beta(beta2utf(self._form).lower()))]
+		self.parse = [(character,self.ptype(character)) for character in re.sub(r'([^A-Za-z]+)\|',r'|\1',utf2beta(beta2utf(self._form).lower()))]
+		self.guesses = {}
 		# ic(self.parse)
-	def type(self,character):
+	def ptype(self,character):
 		if character in long_vowels + short_vowels + ancipites: return 'vowel'
 		if re.match('[A-Za-z]',character) and character not in long_vowels + short_vowels + ancipites: return 'consonant'
 		if character == '#': return 'break'
@@ -266,8 +286,13 @@ class _word:
 				if consonant_cluster in ['l','r'] and not next_consonant in ['l','r']: return 'anceps' #muta cum liquida
 				return 'long'
 		return False
+	def mutaCumLiquida(self,index):
+		if next_consonant := self.next_consonant(index):
+			if consonant_cluster:=self.next_consonant(self.nextConsonantLocation):
+				if consonant_cluster in ['l','r'] and not next_consonant in ['l','r']: return True
+		return False
 	def add_before_coda(self,form,addition):
-		if self.type(form[0][-1]) == 'consonant':
+		if self.ptype(form[0][-1]) == 'consonant':
 			return form[0][:-1] + addition + form[0][-1]
 		else: return form[0] + addition
 	def syllabify(self):
@@ -344,6 +369,7 @@ class _word:
 		return syllables
 
 	def scan(self, *keepByNature):
+		# ic(inspect.getframeinfo(inspect.currentframe().f_back)[2]) #debug
 		output = []
 		corr_idx = {}
 		nd_idx = 0
@@ -360,11 +386,11 @@ class _word:
 		self.nd = [_ for _ in self.nd if _[1] != 'diacritic']
 		syllables = self.syllabify()
 		syllIdx = 0
-		for index, (letter,type) in enumerate(self.parse):
+		for index, (letter,ptype) in enumerate(self.parse):
 			if letter == '|':
 				self.parse[index] = ('i','vowel')
 				letter = 'i'
-				type = 'vowel'
+				ptype = 'vowel'
 			if letter in long_vowels:
 				output.append([syllables[syllIdx],byNature])
 				syllIdx += 1
@@ -430,10 +456,12 @@ class _word:
 		if dt and (dentry:=dictionary.get(self._beta.strip(), dictionary.get(self._beta.replace('+','').strip(), dictionary.get(re.sub('(.*?[=/].*?)/(.*?)', r'\1\2', self._beta).strip(), dictionary.get(self._beta.replace('a','h').strip(), None))))):
 			for dSyll in dentry:
 				if dSyll[1] == '⏒' and mCl:
-					v = [l for l in output[dSyll[0]][0] if self.type(l) == 'vowel'][0]
+					v = [l for l in output[dSyll[0]][0] if self.ptype(l) == 'vowel'][0]
 					index = output[dSyll[0]][0].index(v)+outputIndexes[dSyll[0]]
-					if self.shortToLong(index):
+					if self.mutaCumLiquida(index) and self.shortToLong(index):
 						dSyll[1] = scans[self.shortToLong(index)]
+				if dSyll[1] == '⏑' and output[dSyll[0]][0][-1] in list('bgdqkpstfx'):
+					dSyll[1] = '⏒'
 				output[dSyll[0]][1] = dSyll[1]
 		elif any([True for o in output if o[1] == '?']):
 			if dt:
@@ -442,33 +470,57 @@ class _word:
 					for dSyll in model:
 						if dSyll[0] >= len(output): break
 						if dSyll[1] == '⏒' and mCl:
-							v = [l for l in output[dSyll[0]][0] if self.type(l) == 'vowel'][0]
+							v = [l for l in output[dSyll[0]][0] if self.ptype(l) == 'vowel'][0]
 							index = output[dSyll[0]][0].index(v)+outputIndexes[dSyll[0]]
 							if self.shortToLong(index):
 								dSyll[1] = scans[self.shortToLong(index)]
 						output[dSyll[0]][1] = dSyll[1]
+						self.guesses[dSyll[0]] = dSyll[1]
 		if not keepByNature[0]: 
 			output = [[o[0],o[1].replace('—','–')] for o in output]
 
 		#test synizesis
-		for e,s in enumerate(output):
-			if e > 0:
-				if (s[0][0] in long_vowels + ancipites + short_vowels or s[0][:2] in diphthongs) and s[1] in ['–','⏓'] and re.sub('[^a-z]','',output[e-1][0])[-1] in short_vowels + ancipites and output[e-1][1] in ['⏑','⏒','⏓'] and not '+' in s[0]:
-					output[e-1][1] += '͜'
+		output = _testSynizesis(output)
 		return output
+
+	def manualScan(self,previousScan,previousGuesses):
+		global dictionary
+		print(f'  Unable to fully parse: {self._form}')
+		print(f'  Current parses: {previousScan}')
+		suppletions = []
+		for e,(sy,sc) in enumerate(previousScan):
+			if previousGuesses.get(e):
+				suppletions.append([e,previousGuesses[e]])
+				continue
+			if sc != '?': continue
+			q = input(f'    Enter scansion of {beta2utf(sy)}: ').replace('lb','⏓').replace('bl','⏒').replace('b','⏑').replace('s','⏑͜').replace('-','–').replace('l','–')
+			suppletions.append([e,q])
+		dictionary[normalizeForm(utf2beta(self._form))] = suppletions
+		with open(os.path.join(fp,'greekScansions.json'),'w',encoding='utf8') as nf:
+			nf.write(json.dumps(dictionary, ensure_ascii=False))
+		return self.scan(False)
+
+def _testSynizesis(sequence):
+	for e,s in enumerate(sequence):
+		if e > 0:
+			if (s[0][0] in long_vowels + ancipites + short_vowels or s[0][:2] in diphthongs) and s[1] in ['–','⏓','⏒'] and re.sub('[^a-z]','',sequence[e-1][0])[-1] in short_vowels + ancipites and sequence[e-1][1] in ['⏑','⏒','⏓'] and not '+' in s[0]:
+				sequence[e-1][1] += '͜'
+	return sequence
 		
 def _sandhi(sentence):
 	sandhis = []
-	for index,[form, scansion, type] in enumerate(sentence[1:]):
-		if type != 'word': continue
+	for index,[form, scansion, ptype] in enumerate(sentence[1:]):
+		# ic(sentence)
+		# ic(index,form,scansion,ptype)
+		if ptype != 'word': continue
 		previous_word = sentence[index][0].replace('|','i') #rescue iota subscript
 		previous_word=re.sub(r'(.)[/\\=]?\+',r'\1\1',previous_word) #rescue diaeresis
 		previous_word=re.sub('[^A-z]*','',previous_word)
 		pr_final = ','
 		pr_final_len = sentence[index][1][-1][1] if len(sentence[index][1]) > 0 else ''
-		if len(previous_word) > 0:
-			pr_final = previous_word[-1].lower()
-			if pr_final in ['i','u'] and len(previous_word) > 1 and previous_word[-2].lower() in ['a','e','h','o','w','u'] and previous_word[-2:].lower() != 'uu': pr_final = previous_word[-2:].lower()
+		if bool(sentence[index][1]):
+			pr_final = re.sub('[^A-z]*','',sentence[index][1][-1][0]).lower()
+			pr_final = pr_final[-2:] if len(pr_final) > 1 and pr_final[-2:] != 'uu' and pr_final[-1] in ['i','u'] and pr_final[-2] in ['a','e','h','o','w','u'] else pr_final[-1]
 		current_word= re.sub('[^A-z]*','',form)
 		cu_initial = ','
 		cu_second = ''
@@ -501,7 +553,8 @@ def _sandhi(sentence):
 				shorten = False
 				if pre_final == '⏒': shorten = True
 				if len(previous_word) > 2 and previous_word[-2].lower() not in long_vowels + short_vowels + ancipites: shorten = False
-				if shorten: sandhis.append((index,'short'))
+				if shorten:
+					sandhis.append((index,'short'))
 	return(sandhis)
 
 class doc:
@@ -513,6 +566,9 @@ class doc:
 		self._form = kwargs.get('form',None)
 		self._stream = kwargs.get('stream',None)
 		self._specialDict = kwargs.get('specialDictionary',None)
+		self._divide = kwargs.get('divide',None)
+		self._addUnknowns = kwargs.get('addUnknowns',None)
+		self.divisions = {}
 		if self._specialDict:
 			loadDictionary(special = self._specialDict)
 		mCl = kwargs.get('mCl',False)
@@ -547,8 +603,8 @@ class doc:
 		isMetre = False
 		#Dactylic
 		arsis = f"({'|'.join(lg)})"
-		thesis = f"({'|'.join(py.union(lg))})"
-		anceps = f"({'|'.join(lg.union(br))})"
+		thesis = f"({'|'.join(merge(py, lg))})"
+		anceps = f"({'|'.join(merge(lg, br))})"
 		if metre == 'hex':
 			metreRe = re.compile(f"{arsis}{thesis}{arsis}{thesis}{arsis}{thesis}{arsis}{thesis}{arsis}{thesis}{arsis}{anceps}")
 			size = 12
@@ -611,10 +667,10 @@ class doc:
 					if e == 35: correction[14] = i
 				isMetre = True
 		#Iambic
-		arsis = f"({'|'.join(lg.union(py))})"
-		thesis1 = f"({'|'.join(lg.union(py).union(br))})"
-		thesis2 = f"({'|'.join(br.union(py))})"
-		anceps = f"({'|'.join(br.union(lg))})"
+		arsis = f"({'|'.join(merge(lg, py))})"
+		thesis1 = f"({'|'.join(merge(lg, py, br))})"
+		thesis2 = f"({'|'.join(merge(br, py))})"
+		anceps = f"({'|'.join(merge(br, lg))})"
 		if metre == '3ia':
 			metreRe = re.compile(f"{thesis1}{arsis}{thesis2}{arsis}{thesis1}{arsis}{thesis2}{arsis}{thesis1}{arsis}{thesis2}{anceps}")
 			size = 12
@@ -681,7 +737,7 @@ class doc:
 		#Aeolic
 		longum = f"({'|'.join(lg)})"
 		breve = f"({'|'.join(br)})"
-		anceps = f"({'|'.join(lg.union(br))})"
+		anceps = f"({'|'.join(merge(lg, br))})"
 		if metre == 'gl':
 			metreRe = re.compile(f"{anceps}{anceps}{longum}{breve}{breve}{longum}{breve}{longum}")
 			size = 8
@@ -753,6 +809,35 @@ class doc:
 			if len(tmpAdd) > 0: analysis += f" + {tmpAdd}"
 		return {'analysis':analysis,'outputScansion':data['scansion'],'scansions':tmpScansions}
 
+	def _divideMetre(self,metre,tmpData,tmpScansions,punctuationLocations):
+		parsedSylls = len(tmpData['scansion'])
+		countSylls = 0
+		newBit = []
+		baseCount = 0
+		totalPosition = 0
+		division = {}
+		while True:
+			if '+' in tmpData['analysis']:
+				punctuationMarks = 0
+				for e,w in enumerate(tmpScansions):
+					countSylls += len(w[1])
+					if countSylls > parsedSylls: break
+					if countSylls == parsedSylls:
+						baseCount += (e+1)
+						for p in punctuationLocations:
+							if p <= baseCount: punctuationMarks += 1
+						division[baseCount+punctuationMarks] = {'analysis':tmpData['analysis'].split('+')[0].strip(),'outputScansion':tmpData['scansion'],'scansions':tmpScansions[:e+1]}
+				newData = self._checkMetre(metre,{'analysis':None,'scansion':tmpData['analysis'].split('+')[1].strip()},tmpScansions[e:])
+				tmpData['analysis'] = newData['analysis']
+				tmpData['scansion'] = newData['outputScansion']
+				tmpScansions = tmpScansions[e:]
+				parsedSylls = len(tmpData['scansion'])
+				countSylls = 0
+				totalPosition = baseCount+punctuationMarks
+			else:
+				division[baseCount+punctuationMarks+len(tmpScansions)+len([xp for xp in punctuationLocations if xp >= totalPosition])] = {'analysis': tmpData['analysis'], 'outputScansion':tmpData['scansion'],'scansions':tmpScansions}
+				return division
+
 	def _scanDocument(self):
 		document = self._tokenize(self._form.replace("᾽","'"))
 		self.scannedDocument = []
@@ -765,7 +850,8 @@ class doc:
 				if self._verse and token['type'] != 'word': continue
 				form = token['form'].replace('\\','/')
 				try:
-					tempScan = _word(form).scan(False)
+					currentWord = _word(form)
+					tempScan = currentWord.scan(False)
 				except:
 					if __name__ == '__main__':
 						import traceback
@@ -774,19 +860,26 @@ class doc:
 					else:
 						raise Exception(f'{form} caused an error')
 				if '?' in ''.join(t[1] for t in tempScan):
-					tempScan = _word(utf2beta(beta2utf(form).lower())).scan(False)
+					currentWord = _word(utf2beta(beta2utf(form).lower()))
+					tempScan = currentWord.scan(False)
+					tempGuesses = currentWord.guesses
 				if '?' in ''.join(t[1] for t in tempScan):
 					howmanyAccents = len(re.findall("[/=]", form))
 					if howmanyAccents > 1:
 						form=form[::-1].replace("/", "", 1)[::-1]
-						tempScan = _word(form).scan(False)
+						currentWord = _word(form)
+						tempScan = currentWord.scan(False)
+						tempGuesses = currentWord.guesses
+				if '?' in ''.join(t[1] for t in tempScan) and self._addUnknowns:
+					tempScan = _word(form).manualScan(tempScan,tempGuesses)
 				scansions.append([form, tempScan, token['type']])
 			for index, outcome in _sandhi(scansions):
 				if len(scansions[index][1]) > 0:
 					scans['anceps'] = '?' if scansions[index][1][-1][1] == '?' else '⏒'
 					if (scansions[index][1][-1][1] == '⏑' and outcome != 'short') or (scansions[index][1][-1][1] == '–' and outcome != 'long') or (scansions[index][1][-1][1] in ['⏒','?'] and outcome != 'anceps'):
 						scansions[index][1][-1][1] = scans[outcome]
-			output = {'scansion':''.join([syllable for form,scansion,type in scansions for vowel,syllable in scansion]),'analysis':None}
+			scansions = [[x[0],_testSynizesis(x[1]),x[2]] for x in scansions]
+			output = {'scansion':''.join([syllable for form,scansion,ptype in scansions for vowel,syllable in scansion]),'analysis':None}
 			#Check for metre
 			if self._verse:
 				if not self._metre:
@@ -798,6 +891,19 @@ class doc:
 				output['analysis'] = tmpMetre['analysis']
 				output['scansion'] = tmpMetre['outputScansion']
 				scansions = tmpMetre['scansions']
+				if '+' in output['analysis'] and self._divide:
+					punctuationLoc = []
+					ept,eptOffset = 0,0
+					for ept,token in enumerate(sentence['tokens']):
+						if ept-eptOffset < len(scansions) and token['form'].replace('\\','/') != scansions[ept-eptOffset][0]:
+							punctuationLoc.append(ept)
+							eptOffset += 1
+					division=self._divideMetre(self._metre,output,scansions,punctuationLoc)
+					if __name__ == '__main__':
+						for atword,data in division.items():
+							print(' '.join([beta2utf(t[0]) for t in data['scansions']]).ljust(75),data['outputScansion'])
+						return
+					else: self.divisions = [(k,beta2utf(v['scansions'][-1][0])) for k,v in division.items()]
 
 			#By syllable
 			output['syllables'] = []
@@ -853,18 +959,31 @@ class doc:
 if __name__ == '__main__':
 	import textwrap
 	if '-help' in sys.argv:
-		entries = ['-doc','-verse','-syll','-mCl','-above','-showText','-analysis','-metre','-export','-problems','-export_obj']
-		descr = ['Load UTF-8 text file into the scanner. The name of the file should include the full path. If it contains spaces, use quotation marks around it.','Specify that the text is verse. Each line in the text is scanned as a separate unit; otherwise, units will be delimited by strong punctuation marks (., ·, ;).', 'Print scansions for each syllable as interlinear text. A number after this command specifies the number of syllables per line (default: 15).','Syllabifies muta-cum-liquida clusters as onsets, which may result in correptio Attica. If left unspecified, the parser returns all possibilities for syllables with a short vowel preceding this type of cluster.','If -syll is active, print the interlinear scansions above the line of text (otherwise scansions are printed below by default)','Print text units (lines/sentences) before their syllable-by-syllable scansion. The metre of each line is not displayed by default.','Display the detected metre (if any) alongside syllable-by-syllable scansions.','Specify what metre the text is in. Available options:'+190* ' '+'· hex            hexameter'+190* ' '+'· pent           pentameter'+190* ' '+'· 3ia            iambic trimeter'+190* ' '+'· 4tr^           catalectic trochaic tetrameter'+190* ' '+'· 4anap^         catalectic anapaestic tetrameter'+190* ' '+'· 3ia(s)         scazon'+190* ' '+'· gl             glyconean'+190* ' '+'· ph             pherecratean'+190* ' '+'· sapph          sapphic endecasyllable'+190* ' '+'· adon           adonean'+190* ' '+'If this option is omitted, metres will be guessed by the parser.','Save the results to a text file. Enter the full path to the file (including the folder).','If -verse is active, only return lines that do not scan.','Save the results as a Python object into a pickle file.']
-		title = "DIORISIS SCAN b`eta"
+		entryOrder = ['-doc','-verse','-metre','-analysis','-divide','-syll','-mCl','-above','-showText','-export','-problems','-export_obj']
+		helpItems = 		{
+			'-doc': 'Load UTF-8 text file into the scanner. The name of the file should include the full path. If it contains spaces, use quotation marks around it.',
+			'-verse': 'Specify that the text is verse. Each line in the text is scanned as a separate unit; otherwise, units will be delimited by strong punctuation marks (., ·, ;).',
+			'-syll': 'Print scansions for each syllable as interlinear text. A number after this command specifies the number of syllables per line (default: 15).',
+			'-mCl': 'Syllabifies muta-cum-liquida clusters as onsets, which may result in correptio Attica. If left unspecified, the parser returns all possibilities for syllables with a short vowel preceding this type of cluster.',
+			'-above': 'If -syll is active, print the interlinear scansions above the line of text (otherwise scansions are printed below by default)',
+			'-showText': 'Print text units (lines/sentences) before their syllable-by-syllable scansion. The metre of each line is not displayed by default.',
+			'-analysis': 'If in verse mode, display the detected metre (if any) alongside syllable-by-syllable scansions.',
+			'-metre': 'If in verse mode, specify what metre the text is in. Available options:'+190* ' '+'· hex            hexameter'+190* ' '+'· pent           pentameter'+190* ' '+'· 3ia            iambic trimeter'+190* ' '+'· 4tr^           catalectic trochaic tetrameter'+190* ' '+'· 4anap^         catalectic anapaestic tetrameter'+190* ' '+'· 3ia(s)         scazon'+190* ' '+'· gl             glyconean'+190* ' '+'· ph             pherecratean'+190* ' '+'· sapph          sapphic endecasyllable'+190* ' '+'· adon           adonean'+190* ' '+'If this option is omitted, metres will be guessed by the parser.',
+			'-export': 'Save the results to a text file. Enter the full path to the file (including the folder).',
+			'-problems': 'If -verse is active, only return lines that do not scan.',
+			'-export_obj': 'Save the results as a Python object into a pickle file.',
+			'-divide': 'Available in verse mode. If the parser identifies a line but material is left over, a line break will be added to separate the line from the rest. If -metre is specified, the parser will place the line break after the first identifiable line of the selected metre, otherwise it will look for the longest possible supported metre.'
+			}
+		title = "DIORISIS SCAN beta 0.2 (5-2026)"
 		print(f'╔{"═"*(len(title)+2)}╗'.center(os.get_terminal_size().columns))
 		print(f'║ {title} ║'.center(os.get_terminal_size().columns))
 		print(f'╚{"═"*(len(title)+2)}╝'.center(os.get_terminal_size().columns))
 		print('Made since 2022 by Alessandro Vatri (alessandro.vatri@crs.rm.it)'.center(os.get_terminal_size().columns))
 		print()
-		for e,i in enumerate(entries):
+		for i in entryOrder:
 			wrapper = textwrap.TextWrapper(initial_indent='{:<30}'.format(i), width=os.get_terminal_size().columns,
 							   subsequent_indent=' '*30)
-			print(wrapper.fill(descr[e]))
+			print(wrapper.fill(helpItems[e]))
 		print()
 		sys.exit()
 	print('Loading dictionary')
@@ -873,6 +992,7 @@ if __name__ == '__main__':
 	os.system(clear)
 	verse = '-verse' in sys.argv
 	metre = False
+	addUnknowns = '-addUnknowns' in sys.argv
 	if '-metre' in sys.argv:
 		if sys.argv.index('-metre')+1 < len(sys.argv):
 			metre = metre if (metre:=sys.argv[sys.argv.index('-metre')+1]) in metreCycle else False
@@ -885,7 +1005,7 @@ if __name__ == '__main__':
 	if '-doc' in sys.argv: 
 		if sys.argv.index('-doc')+1 < len(sys.argv):
 			filename = sys.argv[sys.argv.index('-doc')+1]
-			document = doc(file=filename,verse=verse,metre=metre, mCl='-mCl' in sys.argv)
+			document = doc(file=filename,verse=verse,metre=metre, mCl='-mCl' in sys.argv, divide='-divide' in sys.argv, addUnknowns=addUnknowns)
 			document.display('-syll' in sys.argv, showText='-showText' in sys.argv, analysis='-analysis' in sys.argv, problems='-problems' in sys.argv, above='-above' in sys.argv)
 		else:
 			print('Filename missing')
@@ -894,7 +1014,7 @@ if __name__ == '__main__':
 		while True:
 			form = input('Enter form/sentence ([e]xit): ')
 			if not re.search('[A-Za-z]', form): 
-				document = doc(form=form,verse=verse,metre=metre, mCl='-mCl' in sys.argv)
+				document = doc(form=form,verse=verse,metre=metre, mCl='-mCl' in sys.argv, divide='-divide' in sys.argv, addUnknowns=addUnknowns)
 				document.display('-syll' in sys.argv, showText='-showText' in sys.argv, analysis='-analysis' in sys.argv, problems='-problems' in sys.argv, above='-above' in sys.argv)
 			elif form == 'e': break
 			else: print('Enter text in Unicode Greek')
@@ -914,5 +1034,3 @@ if __name__ == '__main__':
 		else:
 			print('Name of output file missing')
 			sys.exit()
-
-#documentation for stream in module, addspecial (dict as input)
